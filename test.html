@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Accurate Ring & Bangle Size Finder</title>
+    <link rel="stylesheet" href="test.css" />
+  </head>
+  <body>
+    <h1>Ring & Bangle Size Finder</h1>
+    <canvas id="ringCanvas" width="400" height="400"></canvas>
+
+    <div class="controls">
+      <div class="slider-container">
+        <label for="ringSize">Ring or Bangle Diameter (mm):</label>
+        <input
+          type="range"
+          id="ringSize"
+          class="slider"
+          min="10"
+          max="100"
+          value="50"
+          step="0.01"
+          oninput="updateRing(this.value)"
+        />
+      </div>
+      <div class="button-controls">
+        <!-- Buttons for increasing and decreasing diameter -->
+        <button onclick="adjustDiameter(-1)">-</button>
+        <button onclick="adjustDiameter(1)">+</button>
+      </div>
+      <p id="ringLabel">Diameter: 50.00 mm</p>
+      <!-- Display diameter with 2 decimals -->
+    </div>
+
+    <script>
+      // Constants
+      const mmToInches = 1 / 25.4; // Conversion factor from mm to inches
+
+      // Select elements
+      const canvas = document.getElementById("ringCanvas");
+      const ctx = canvas.getContext("2d");
+      const ringLabel = document.getElementById("ringLabel");
+
+      let currentDiameter = 50; // Initialize with default diameter in mm
+
+      // Function to set the scale factor based on screen width
+      function getScaleFactor() {
+        const screenWidth = window.innerWidth; // Get the screen width
+
+        // Example custom scale factors based on different screen widths
+        let scaleFactor = 1; // Default to 1 for default case
+        if (screenWidth <= 480) {
+          scaleFactor = 0.845; // For smaller screens (mobile)
+        } else if (screenWidth <= 768) {
+          scaleFactor = 1.1; // For medium screens (small tablets)
+        } else if (screenWidth <= 1024) {
+          scaleFactor = 1.1; // For large tablets
+        } else if (screenWidth > 1024) {
+          scaleFactor = 0.74; // For larger screens (desktops)
+        }
+        return scaleFactor;
+      }
+
+      // Function to update the ring based on input diameter (mm)
+      function updateRing(diameterMM) {
+        const scaleFactor = getScaleFactor(); // Get the scale factor based on screen size
+
+        // Conversion from mm to inches
+        const diameterInches = diameterMM * mmToInches;
+
+        // Device pixel ratio (PPI) value adjusted by the scale factor
+        const screenPPI = window.devicePixelRatio * 96;
+        const diameterPx = diameterInches * screenPPI;
+
+        // Apply scaling factor
+        const correctedDiameterPx = diameterPx * scaleFactor;
+
+        // Calculate radius for drawing the ring
+        const radiusPx = correctedDiameterPx / 2;
+        const formattedDiameter = parseFloat(diameterMM).toFixed(2);
+
+        // Update the displayed diameter label
+        ringLabel.textContent = `Diameter: ${formattedDiameter} mm`;
+
+        // Clear the canvas for redrawing
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Draw the ring with the corrected size
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radiusPx, 0, Math.PI * 2);
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw the diamond shape inside the ring
+        const diamondSize = radiusPx / 5;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - radiusPx); // top of the ring
+        ctx.lineTo(centerX - diamondSize, centerY - radiusPx - diamondSize); // left point
+        ctx.lineTo(centerX, centerY - radiusPx - 2 * diamondSize); // bottom point
+        ctx.lineTo(centerX + diamondSize, centerY - radiusPx - diamondSize); // right point
+        ctx.closePath();
+        ctx.fillStyle = "lightblue";
+        ctx.fill();
+        ctx.strokeStyle = "blue";
+        ctx.stroke();
+
+        // Draw the arrows for diameter indication
+        const arrowSize = 15;
+        const arrowTextSize = 24;
+        ctx.fillStyle = "#000";
+        ctx.font = `${arrowTextSize}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("←", centerX - radiusPx + arrowSize, centerY);
+        ctx.fillText("→", centerX + radiusPx - arrowSize, centerY);
+
+        // Label with diameter text in the center of the canvas
+        ctx.font = "12px Arial";
+        ctx.fillStyle = "#000";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`${formattedDiameter} mm`, centerX, centerY);
+      }
+
+      // Function to adjust diameter using the buttons
+      function adjustDiameter(change) {
+        currentDiameter = parseFloat(currentDiameter) + change;
+        if (currentDiameter < 10) {
+          currentDiameter = 10;
+        }
+        if (currentDiameter > 100) {
+          currentDiameter = 100;
+        }
+        updateRing(currentDiameter);
+        document.getElementById("ringSize").value = currentDiameter; // Update slider position
+      }
+
+      // Initial ring drawing with the default diameter
+      updateRing(currentDiameter);
+
+      // Event listener to adjust ring when screen is resized
+      window.addEventListener("resize", function () {
+        updateRing(currentDiameter);
+      });
+    </script>
+  </body>
+</html>
